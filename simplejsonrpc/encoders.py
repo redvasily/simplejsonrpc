@@ -1,8 +1,23 @@
+import new
 import datetime
 import simplejson
 
 
 class SafeEncoder(simplejson.JSONEncoder):
+    def __init__(self, *args, **kwds):
+        utf8_output = kwds.pop('utf8_output', True)
+        if utf8_output:
+            kwds['ensure_ascii'] = False
+
+        simplejson.JSONEncoder.__init__(self, *args, **kwds)
+
+        if utf8_output:
+            def encode(self, o):
+                out = simplejson.JSONEncoder.encode(self, o)
+                return out.encode('utf8')
+
+            self.encode = new.instancemethod(encode, self, SafeEncoder)
+
     def default(self, o):
         if isinstance(o, datetime.datetime):
             return {
@@ -15,4 +30,3 @@ class SafeEncoder(simplejson.JSONEncoder):
             }
         else:
             super(SafeEncoder, self).default(o)
-
